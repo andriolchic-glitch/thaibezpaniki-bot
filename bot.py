@@ -1,50 +1,61 @@
 import os
 import asyncio
 import logging
-from datetime import datetime
+from deep_translator import GoogleTranslator
 import feedparser
 from telegram import Bot
 from telegram.error import TelegramError
 
-# ✅ Токен бота
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8818290368:AAE7XlyGmhZ_NuYrzFLyf8Jh7iY-mba8Xtw")
+# Токен бота
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
-# ✅ Username канала (без @)
+# Username канала
 CHANNEL_ID = "@thaibezpaniki"
 
-# ✅ Интервал проверки: 3600 = каждый час
+# Интервал проверки: 3600 = каждый час
 CHECK_INTERVAL = 3600
 
-# --- Источники новостей ---
+# Источники новостей
 RSS_FEEDS = [
     {
         "name": "ThaiVisa / AseanNow",
         "url": "https://aseannow.com/applications/core/interface/rss/rss.php?id=1"
     },
     {
-        "name": "Кокосы.ру — Таиланд",
-        "url": "https://coconuts.co/bangkok/feed/"
-    },
-    {
         "name": "The Thaiger",
         "url": "https://thethaiger.com/feed"
+    },
+    {
+        "name": "Coconuts Bangkok",
+        "url": "https://coconuts.co/bangkok/feed/"
     },
 ]
 
 # Ключевые слова для фильтрации
 KEYWORDS = [
-    "виза", "visa", "въезд", "entry", "пребывание", "stay",
-    "паспорт", "passport", "россия", "russia", "russian",
-    "immigration", "иммиграция", "депортация", "deportation",
-    "TM30", "TM47", "продление", "extension", "border", "граница",
-    "tourist", "туристический", "разрешение", "permit", "overstay"
+    "visa", "entry", "stay", "passport", "russia", "russian",
+    "immigration", "deportation", "TM30", "TM47", "extension",
+    "border", "tourist", "permit", "overstay", "foreigner"
 ]
 
-# Уже отправленные ссылки (не дублируем)
+# Уже отправленные ссылки
 sent_links = set()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+translator = GoogleTranslator(source='auto', target='ru')
+
+
+def translate(text: str) -> str:
+    """Переводит текст на русский язык"""
+    try:
+        if not text:
+            return text
+        return translator.translate(text[:4000])
+    except Exception as e:
+        logger.warning(f"Ошибка перевода: {e}")
+        return text
 
 
 def is_relevant(title: str, summary: str = "") -> bool:
@@ -52,9 +63,9 @@ def is_relevant(title: str, summary: str = "") -> bool:
     return any(kw.lower() in text for kw in KEYWORDS)
 
 
-def format_message(title: str, link: str, source: str, published: str = "") -> str:
+def format_message(title_ru: str, link: str, source: str, published: str = "") -> str:
     msg = f"🇹🇭 *{source}*\n\n"
-    msg += f"📌 {title}\n\n"
+    msg += f"📌 {title_ru}\n\n"
     if published:
         msg += f"🕐 {published}\n"
     msg += f"🔗 [Читать полностью]({link})"
@@ -78,7 +89,10 @@ async def fetch_and_send(bot: Bot):
                     continue
 
                 if is_relevant(title, summary):
-                    msg = format_message(title, link, feed_info["name"], published)
+                    # Переводим заголовок на русский
+                    title_ru = translate(title)
+
+                    msg = format_message(title_ru, link, feed_info["name"], published)
                     try:
                         await bot.send_message(
                             chat_id=CHANNEL_ID,
@@ -89,7 +103,7 @@ async def fetch_and_send(bot: Bot):
                         sent_links.add(link)
                         new_count += 1
                         await asyncio.sleep(2)
-                        logger.info(f"Отправлено: {title}")
+                        logger.info(f"Отправлено: {title_ru}")
                     except TelegramError as e:
                         logger.error(f"Ошибка отправки: {e}")
         except Exception as e:
@@ -102,11 +116,11 @@ async def send_startup_message(bot: Bot):
     try:
         await bot.send_message(
             chat_id=CHANNEL_ID,
-            text="✅ *Thailert запущен!*\n\nБуду присылать актуальные новости для россиян в Таиланде: визы, въезд, документы, изменения правил.",
+            text="✅ *Тай Без Паники — запущен!*\n\nБуду присылать актуальные новости для россиян в Таиланде на русском языке: визы, въезд, документы, изменения правил.",
             parse_mode="Markdown"
         )
     except TelegramError as e:
-        logger.error(f"Не могу написать в канал: {e}\nДобавь бота в канал как администратора!")
+        logger.error(f"Не могу написать в канал: {e}")
 
 
 async def main():
