@@ -1,0 +1,1 @@
+# thaibezpaniki-bot
