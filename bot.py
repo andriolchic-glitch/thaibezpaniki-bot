@@ -7,7 +7,7 @@ from telegram import Bot
 from telegram.error import TelegramError
 
 # Токен бота
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8818290368:AAFrzRqmkvpKbmkF2aMDBF9hxU1mIE-ML_4")
 
 # Username канала
 CHANNEL_ID = "@thaibezpaniki"
