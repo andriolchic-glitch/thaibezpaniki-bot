@@ -174,7 +174,7 @@ async def check_rss(bot: Bot, sent_links: set):
     for feed_info in RSS_FEEDS:
         try:
             feed = feedparser.parse(feed_info["url"])
-            for entry in feed.entries[:10]:
+            for entry in feed.entries[:20]:
                 link    = entry.get("link", "")
                 title   = entry.get("title", "")
                 summary = entry.get("summary", "")
