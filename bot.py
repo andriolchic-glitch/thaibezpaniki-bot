@@ -20,8 +20,8 @@ TG_SESSION_STRING = os.environ["TG_SESSION_STRING"]
  
 CHANNEL_ID       = "@thaibezpaniki"
 CHECK_INTERVAL   = 3600
-SENT_LINKS_FILE  = "sent_links.json"
-SENT_TG_IDS_FILE = "sent_tg_ids.json"
+SENT_LINKS_FILE  = "/data/sent_links.json"
+SENT_TG_IDS_FILE = "/data/sent_tg_ids.json"
  
 # ── RSS-источники ──────────────────────────────────────────────────────
 RSS_FEEDS = [
