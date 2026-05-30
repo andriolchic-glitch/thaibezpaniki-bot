@@ -112,9 +112,18 @@ def build_post(title: str, body: str, link: str, source: str) -> str:
     return msg
  
  
+THAILAND_KEYWORDS = [
+    "thailand", "thai", "bangkok", "phuket", "pattaya",
+    "chiang mai", "samui", "таиланд", "тайланд", "бангкок",
+    "пхукет", "паттайя", "чиангмай", "самуи",
+]
+ 
 def is_relevant(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
     if any(bad.lower() in text for bad in BANNED_KEYWORDS):
+        return False
+    # Обязательно должен упоминаться Таиланд
+    if not any(loc.lower() in text for loc in THAILAND_KEYWORDS):
         return False
     return any(kw.lower() in text for kw in REQUIRED_KEYWORDS)
  
