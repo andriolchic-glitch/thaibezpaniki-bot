@@ -38,18 +38,26 @@ RSS_FEEDS = [
  
 # ── Ключевые слова ─────────────────────────────────────────────────────
 REQUIRED_KEYWORDS = [
-    "visa", "immigration", "passport", "entry", "border",
-    "TM30", "TM47", "overstay", "extension", "permit",
-    "foreigner", "tourist visa", "expat", "residence",
-    "work permit", "BOI", "elite visa", "LTR visa",
-    "retirement visa", "non-immigrant", "re-entry",
-    "90-day report", "departure card", "blacklist",
-    "immigration office", "Thai immigration",
-    "виза", "иммиграция", "паспорт", "въезд", "граница",
-    "разрешение", "продление", "переезд", "документы",
-    "ТМ30", "ТМ47", "депортация", "резидент", "ВНЖ",
+    # Визы и типы виз
+    "tourist visa", "retirement visa", "non-immigrant visa",
+    "elite visa", "LTR visa", "work permit", "visa exemption",
+    "visa on arrival", "visa extension", "visa run", "border run",
+    "e-visa", "digital nomad visa",
+    # Иммиграционные процедуры
+    "TM30", "TM47", "TM6", "immigration",
+    "overstay", "90-day report", "re-entry permit",
+    "departure card", "blacklist", "deportation",
+    "immigration office", "immigration bureau",
+    # Изменения в политике
+    "immigration law", "immigration rules", "immigration policy",
+    "new visa", "visa change", "visa update", "visa regulation",
+    "crackdown", "immigration crackdown",
+    # Русские эквиваленты
+    "виза", "иммиграция", "иммиграционный",
+    "ТМ30", "ТМ47", "депортация", "овerstay", "овerstay",
     "рабочая виза", "туристическая виза", "пограничный бег",
-    "border run", "консульство", "посольство",
+    "продление визы", "90-дневный отчёт", "консульство",
+    "миграционная политика", "миграционные правила",
 ]
  
 BANNED_KEYWORDS = [
@@ -58,6 +66,8 @@ BANNED_KEYWORDS = [
     "football", "soccer", "sport", "concert", "festival",
     "restaurant", "food", "recipe", "hotel", "resort",
     "крипта", "криптовалюта", "инвестиции", "заработок",
+    "real estate", "property", "condo", "недвижимость",
+    "weather", "погода", "tsunami", "earthquake",
 ]
  
 # ── Логирование ────────────────────────────────────────────────────────
