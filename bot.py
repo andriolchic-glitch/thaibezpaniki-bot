@@ -8,13 +8,20 @@ import feedparser
 from deep_translator import GoogleTranslator
 from telegram import Bot
 from telegram.error import TelegramError
+from telethon import TelegramClient
+from telethon.sessions import StringSession
+from telethon.tl.functions.messages import GetHistoryRequest
  
 # ── Настройки ─────────────────────────────────────────────────────────
-BOT_TOKEN = os.environ["BOT_TOKEN"]
+BOT_TOKEN         = os.environ["BOT_TOKEN"]
+TG_API_ID         = int(os.environ["TG_API_ID"])
+TG_API_HASH       = os.environ["TG_API_HASH"]
+TG_SESSION_STRING = os.environ["TG_SESSION_STRING"]
  
-CHANNEL_ID      = "@thaibezpaniki"
-CHECK_INTERVAL  = 3600
-SENT_LINKS_FILE = "sent_links.json"
+CHANNEL_ID       = "@thaibezpaniki"
+CHECK_INTERVAL   = 3600
+SENT_LINKS_FILE  = "sent_links.json"
+SENT_TG_IDS_FILE = "sent_tg_ids.json"
  
 # ── RSS-источники ──────────────────────────────────────────────────────
 RSS_FEEDS = [
@@ -36,28 +43,52 @@ RSS_FEEDS = [
     {"name": "Phuket News",             "url": "https://www.thephuketnews.com/rss.php"},
 ]
  
+# ── Telegram-каналы для мониторинга ───────────────────────────────────
+TG_CHANNELS = [
+    "thailand_visa_news",
+    "ThailandExpats",
+    "thaivisa_official",
+    "phuket_expats",
+    "BangkokExpats",
+    "ChiangMaiExpats",
+    "thailand_immigration",
+    "thai_visa_ru",
+    "thailand_ru",
+    "phuket_ru",
+    "bangkokru",
+    "tailand_emigrant",
+    "thailand_expat_ru",
+    "samui_ru",
+    "chiangmai_ru",
+    "RusskiyTailang",
+    "tailand_dlya_svoikh",
+    "ThailandRussia",
+]
+ 
 # ── Ключевые слова ─────────────────────────────────────────────────────
 REQUIRED_KEYWORDS = [
-    # Визы и типы виз
     "tourist visa", "retirement visa", "non-immigrant visa",
     "elite visa", "LTR visa", "work permit", "visa exemption",
     "visa on arrival", "visa extension", "visa run", "border run",
     "e-visa", "digital nomad visa",
-    # Иммиграционные процедуры
     "TM30", "TM47", "TM6", "immigration",
     "overstay", "90-day report", "re-entry permit",
     "departure card", "blacklist", "deportation",
     "immigration office", "immigration bureau",
-    # Изменения в политике
     "immigration law", "immigration rules", "immigration policy",
     "new visa", "visa change", "visa update", "visa regulation",
     "crackdown", "immigration crackdown",
-    # Русские эквиваленты
     "виза", "иммиграция", "иммиграционный",
-    "ТМ30", "ТМ47", "депортация", "овerstay", "овerstay",
+    "ТМ30", "ТМ47", "депортация",
     "рабочая виза", "туристическая виза", "пограничный бег",
     "продление визы", "90-дневный отчёт", "консульство",
     "миграционная политика", "миграционные правила",
+]
+ 
+THAILAND_KEYWORDS = [
+    "thailand", "thai", "bangkok", "phuket", "pattaya",
+    "chiang mai", "samui", "таиланд", "тайланд", "бангкок",
+    "пхукет", "паттайя", "чиангмай", "самуи",
 ]
  
 BANNED_KEYWORDS = [
@@ -68,17 +99,14 @@ BANNED_KEYWORDS = [
     "крипта", "криптовалюта", "инвестиции", "заработок",
     "real estate", "property", "condo", "недвижимость",
     "weather", "погода", "tsunami", "earthquake",
-    # Тайцы за рубежом — нас не интересует
     "thai workers", "thai nationals", "thai fishermen",
     "thai sailors", "thai migrants", "тайским рабочим",
     "тайские рабочие", "тайских рабочих",
-    # Другие страны как основная тема
     "in japan", "в японии", "in korea", "в корее",
     "in china", "в китае", "in malaysia", "в малайзии",
     "in singapore", "в сингапуре", "in australia", "в австралии",
     "in taiwan", "в тайване", "in usa", "в сша",
     "in europe", "в европе", "in uk", "в британии",
-    # Прочее нерелевантное
     "lobster", "омар", "fishing", "рыбалка", "seafood",
 ]
  
@@ -124,38 +152,31 @@ def build_post(title: str, body: str, link: str, source: str) -> str:
     return msg
  
  
-THAILAND_KEYWORDS = [
-    "thailand", "thai", "bangkok", "phuket", "pattaya",
-    "chiang mai", "samui", "таиланд", "тайланд", "бангкок",
-    "пхукет", "паттайя", "чиангмай", "самуи",
-]
- 
 def is_relevant(title: str, summary: str = "") -> bool:
     text = (title + " " + summary).lower()
     if any(bad.lower() in text for bad in BANNED_KEYWORDS):
         return False
-    # Обязательно должен упоминаться Таиланд
     if not any(loc.lower() in text for loc in THAILAND_KEYWORDS):
         return False
     return any(kw.lower() in text for kw in REQUIRED_KEYWORDS)
  
  
-def load_sent_links() -> set:
-    if os.path.exists(SENT_LINKS_FILE):
+def load_json_set(filepath: str) -> set:
+    if os.path.exists(filepath):
         try:
-            with open(SENT_LINKS_FILE, "r") as f:
+            with open(filepath, "r") as f:
                 return set(json.load(f))
         except Exception as e:
-            logger.warning(f"Ошибка загрузки sent_links: {e}")
+            logger.warning(f"Ошибка загрузки {filepath}: {e}")
     return set()
  
  
-def save_sent_links(links: set):
+def save_json_set(filepath: str, data: set):
     try:
-        with open(SENT_LINKS_FILE, "w") as f:
-            json.dump(list(links), f)
+        with open(filepath, "w") as f:
+            json.dump(list(data), f)
     except Exception as e:
-        logger.warning(f"Ошибка сохранения sent_links: {e}")
+        logger.warning(f"Ошибка сохранения {filepath}: {e}")
  
  
 async def check_rss(bot: Bot, sent_links: set):
@@ -167,10 +188,8 @@ async def check_rss(bot: Bot, sent_links: set):
                 link    = entry.get("link", "")
                 title   = entry.get("title", "")
                 summary = entry.get("summary", "")
- 
                 if not link or link in sent_links:
                     continue
- 
                 if is_relevant(title, summary):
                     body = fetch_article_text(link) or summary
                     try:
@@ -181,17 +200,58 @@ async def check_rss(bot: Bot, sent_links: set):
                             parse_mode="Markdown",
                             disable_web_page_preview=False,
                         )
-                        logger.info(f"✅ {title[:60]}")
+                        logger.info(f"✅ RSS: {title[:60]}")
                         await asyncio.sleep(5)
                     except TelegramError as e:
                         logger.error(f"Ошибка публикации: {e}")
- 
                 sent_links.add(link)
- 
         except Exception as e:
             logger.error(f"Ошибка RSS {feed_info['name']}: {e}")
+    save_json_set(SENT_LINKS_FILE, sent_links)
  
-    save_sent_links(sent_links)
+ 
+async def check_telegram_channels(tg_client: TelegramClient, bot: Bot, sent_tg_ids: set):
+    logger.info("Проверяю Telegram-каналы...")
+    for channel_username in TG_CHANNELS:
+        try:
+            entity = await tg_client.get_entity(channel_username)
+            history = await tg_client(GetHistoryRequest(
+                peer=entity, limit=20,
+                offset_date=None, offset_id=0,
+                max_id=0, min_id=0,
+                add_offset=0, hash=0,
+            ))
+            for msg in history.messages:
+                msg_id = f"{channel_username}_{msg.id}"
+                if msg_id in sent_tg_ids:
+                    continue
+                text = msg.message or ""
+                if len(text) < 50:
+                    sent_tg_ids.add(msg_id)
+                    continue
+                if is_relevant(text):
+                    try:
+                        link = f"https://t.me/{channel_username}/{msg.id}"
+                        post = build_post(
+                            title=text[:100],
+                            body=text[100:600],
+                            link=link,
+                            source=f"@{channel_username}",
+                        )
+                        await bot.send_message(
+                            chat_id=CHANNEL_ID,
+                            text=post,
+                            parse_mode="Markdown",
+                            disable_web_page_preview=True,
+                        )
+                        logger.info(f"✅ TG: @{channel_username}/{msg.id}")
+                        await asyncio.sleep(5)
+                    except TelegramError as e:
+                        logger.error(f"Ошибка публикации TG: {e}")
+                sent_tg_ids.add(msg_id)
+        except Exception as e:
+            logger.warning(f"Не удалось прочитать @{channel_username}: {e}")
+    save_json_set(SENT_TG_IDS_FILE, sent_tg_ids)
  
  
 async def main():
@@ -200,8 +260,14 @@ async def main():
     me = await bot.get_me()
     logger.info(f"Бот: @{me.username}")
  
-    sent_links = load_sent_links()
-    logger.info(f"Загружено ссылок: {len(sent_links)}")
+    sent_links  = load_json_set(SENT_LINKS_FILE)
+    sent_tg_ids = load_json_set(SENT_TG_IDS_FILE)
+    logger.info(f"Загружено: {len(sent_links)} ссылок, {len(sent_tg_ids)} TG-сообщений")
+ 
+    # Используем StringSession — не нужен файл на диске
+    tg_client = TelegramClient(StringSession(TG_SESSION_STRING), TG_API_ID, TG_API_HASH)
+    await tg_client.connect()
+    logger.info("Telethon подключён")
  
     try:
         await bot.send_message(
@@ -214,6 +280,7 @@ async def main():
  
     while True:
         await check_rss(bot, sent_links)
+        await check_telegram_channels(tg_client, bot, sent_tg_ids)
         logger.info(f"Следующая проверка через {CHECK_INTERVAL // 60} минут")
         await asyncio.sleep(CHECK_INTERVAL)
  
