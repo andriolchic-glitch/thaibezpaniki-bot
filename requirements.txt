@@ -1,4 +1,6 @@
-python-telegram-bot
-feedparser
-deep-translator
-requests
+python-telegram-bot==20.7
+telethon==1.36.0
+feedparser==6.0.11
+deep-translator==1.11.4
+requests==2.31.0
+beautifulsoup4==4.12.3
