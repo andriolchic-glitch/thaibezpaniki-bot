@@ -68,6 +68,18 @@ BANNED_KEYWORDS = [
     "крипта", "криптовалюта", "инвестиции", "заработок",
     "real estate", "property", "condo", "недвижимость",
     "weather", "погода", "tsunami", "earthquake",
+    # Тайцы за рубежом — нас не интересует
+    "thai workers", "thai nationals", "thai fishermen",
+    "thai sailors", "thai migrants", "тайским рабочим",
+    "тайские рабочие", "тайских рабочих",
+    # Другие страны как основная тема
+    "in japan", "в японии", "in korea", "в корее",
+    "in china", "в китае", "in malaysia", "в малайзии",
+    "in singapore", "в сингапуре", "in australia", "в австралии",
+    "in taiwan", "в тайване", "in usa", "в сша",
+    "in europe", "в европе", "in uk", "в британии",
+    # Прочее нерелевантное
+    "lobster", "омар", "fishing", "рыбалка", "seafood",
 ]
  
 # ── Логирование ────────────────────────────────────────────────────────
