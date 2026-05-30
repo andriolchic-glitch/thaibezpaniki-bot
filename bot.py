@@ -45,24 +45,14 @@ RSS_FEEDS = [
  
 # ── Telegram-каналы для мониторинга ───────────────────────────────────
 TG_CHANNELS = [
-    "thailand_visa_news",
-    "ThailandExpats",
-    "thaivisa_official",
-    "phuket_expats",
-    "BangkokExpats",
-    "ChiangMaiExpats",
-    "thailand_immigration",
-    "thai_visa_ru",
-    "thailand_ru",
-    "phuket_ru",
-    "bangkokru",
-    "tailand_emigrant",
-    "thailand_expat_ru",
-    "samui_ru",
-    "chiangmai_ru",
-    "RusskiyTailang",
-    "tailand_dlya_svoikh",
-    "ThailandRussia",
+    # Русскоязычные
+    "tailand_viza",       # Таиланд | Виза
+    "ru_thailand",        # Таиланд на русском
+    "chat_thailand",      # Чат русских в Таиланде
+    "thailand_visa",      # Виза в Таиланд
+    # Англоязычные
+    "thaiexaminer",       # Thai Examiner
+    "thaitravels",        # Путешествия и иммиграция
 ]
  
 # ── Ключевые слова ─────────────────────────────────────────────────────
